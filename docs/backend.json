@@ -1,0 +1,337 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Stores information specific to a user, including their resume and preferences, linked to an external authentication system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "externalUserId": {
+          "type": "string",
+          "description": "Unique identifier from the external authentication system for the user. (Relationship: ExternalAuthSystem 1:1 UserProfile)"
+        },
+        "resumeText": {
+          "type": "string",
+          "description": "The extracted text content of the user's uploaded resume, used for AI processing."
+        },
+        "resumeFileName": {
+          "type": "string",
+          "description": "The original file name of the uploaded resume."
+        },
+        "resumeUploadDate": {
+          "type": "string",
+          "description": "Timestamp when the resume was last uploaded or updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "externalUserId",
+        "resumeText",
+        "resumeUploadDate"
+      ]
+    },
+    "JobPosting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobPosting",
+      "type": "object",
+      "description": "Represents a job posting fetched from external sources.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the JobPosting entity."
+        },
+        "externalId": {
+          "type": "string",
+          "description": "Identifier for the job posting from its original external source."
+        },
+        "title": {
+          "type": "string",
+          "description": "The job title."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The name of the company offering the job."
+        },
+        "location": {
+          "type": "string",
+          "description": "The geographical location of the job (city, region, or 'Remote')."
+        },
+        "description": {
+          "type": "string",
+          "description": "The full job description."
+        },
+        "externalUrl": {
+          "type": "string",
+          "description": "The URL to the original job posting for application.",
+          "format": "uri"
+        },
+        "jobType": {
+          "type": "string",
+          "description": "The type of employment (e.g., 'Full-time', 'Part-time', 'Contract', 'Internship')."
+        },
+        "workMode": {
+          "type": "string",
+          "description": "The work arrangement (e.g., 'Remote', 'Hybrid', 'On-site')."
+        },
+        "datePosted": {
+          "type": "string",
+          "description": "The date when the job was originally posted.",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "description": "The external platform or source from which the job was fetched (e.g., 'Azzura')."
+        },
+        "skills": {
+          "type": "array",
+          "description": "A list of skills mentioned or required for this job posting, extracted for AI processing and filtering.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "externalId",
+        "title",
+        "companyName",
+        "location",
+        "description",
+        "externalUrl",
+        "jobType",
+        "workMode",
+        "datePosted",
+        "source"
+      ]
+    },
+    "JobMatchScore": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobMatchScore",
+      "type": "object",
+      "description": "Stores the AI-generated match score and explanation between a specific user's resume and a job posting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the JobMatchScore entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile entity. (Relationship: UserProfile 1:N JobMatchScore)"
+        },
+        "jobId": {
+          "type": "string",
+          "description": "Reference to the JobPosting entity. (Relationship: JobPosting 1:N JobMatchScore)"
+        },
+        "score": {
+          "type": "number",
+          "description": "The match score (0-100%) indicating how well the job matches the user's resume."
+        },
+        "explanation": {
+          "type": "string",
+          "description": "A short AI-generated explanation of the matching skills, relevant experience, and keywords alignment."
+        },
+        "lastCalculatedDate": {
+          "type": "string",
+          "description": "Timestamp when this match score was last calculated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "jobId",
+        "score",
+        "explanation",
+        "lastCalculatedDate"
+      ]
+    },
+    "JobApplication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobApplication",
+      "type": "object",
+      "description": "Tracks a user's application to a specific job posting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the JobApplication entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile entity. (Relationship: UserProfile 1:N JobApplication)"
+        },
+        "jobId": {
+          "type": "string",
+          "description": "Reference to the JobPosting entity. (Relationship: JobPosting 1:N JobApplication)"
+        },
+        "applicationDate": {
+          "type": "string",
+          "description": "The date and time when the user marked the job as 'Applied'.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the application (e.g., 'Applied', 'Interview', 'Offer', 'Rejected', 'Withdrawn')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "User-added notes or comments about the application."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "jobId",
+        "applicationDate",
+        "status"
+      ]
+    },
+    "ApplicationEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ApplicationEvent",
+      "type": "object",
+      "description": "Represents a single event or milestone in the timeline of a job application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ApplicationEvent entity."
+        },
+        "applicationId": {
+          "type": "string",
+          "description": "Reference to the JobApplication entity this event belongs to. (Relationship: JobApplication 1:N ApplicationEvent)"
+        },
+        "eventType": {
+          "type": "string",
+          "description": "A category or type for the event (e.g., 'Status Update', 'Interview Scheduled', 'Feedback Received')."
+        },
+        "eventDate": {
+          "type": "string",
+          "description": "The date and time when the event occurred.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the event."
+        }
+      },
+      "required": [
+        "id",
+        "applicationId",
+        "eventType",
+        "eventDate",
+        "description"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/profile",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores private user profile information, including resume text. The 'externalUserId' field in the document MUST match the '{userId}' from the path for authorization independence and explicit ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication's UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/job_postings/{jobPostingId}",
+        "definition": {
+          "entityName": "JobPosting",
+          "schema": {
+            "$ref": "#/backend/entities/JobPosting"
+          },
+          "description": "Stores public, read-only job posting information fetched from external sources. This collection has a homogeneous security posture (public read for all authenticated users, administrative write access).",
+          "params": [
+            {
+              "name": "jobPostingId",
+              "description": "The unique identifier for a specific job posting."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/job_match_scores/{jobMatchScoreId}",
+        "definition": {
+          "entityName": "JobMatchScore",
+          "schema": {
+            "$ref": "#/backend/entities/JobMatchScore"
+          },
+          "description": "Stores AI-generated match scores specific to a user and a job posting. The 'userId' field in the document MUST match the '{userId}' from the path for authorization independence and explicit ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication's UID."
+            },
+            {
+              "name": "jobMatchScoreId",
+              "description": "The unique identifier for a specific job match score entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/job_applications/{jobApplicationId}",
+        "definition": {
+          "entityName": "JobApplication",
+          "schema": {
+            "$ref": "#/backend/entities/JobApplication"
+          },
+          "description": "Tracks a user's private job applications. The 'userId' field in the document MUST match the '{userId}' from the path for authorization independence and explicit ownership. The 'jobId' is also denormalized.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication's UID."
+            },
+            {
+              "name": "jobApplicationId",
+              "description": "The unique identifier for a specific job application."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/job_applications/{jobApplicationId}/application_events/{applicationEventId}",
+        "definition": {
+          "entityName": "ApplicationEvent",
+          "schema": {
+            "$ref": "#/backend/entities/ApplicationEvent"
+          },
+          "description": "Stores events related to a specific job application. Both 'userId' (matching path) and 'applicationId' (matching parent document ID) are denormalized in the document for authorization independence, eliminating the need for 'get()' calls in rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication's UID."
+            },
+            {
+              "name": "jobApplicationId",
+              "description": "The unique identifier for the parent job application."
+            },
+            {
+              "name": "applicationEventId",
+              "description": "The unique identifier for a specific application event."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be highly secure, scalable, and debuggable, adhering strictly to the CORE DESIGN PRINCIPLES and DESIGN STRATEGY MANDATES. It leverages structural segregation and denormalization to achieve authorization independence and simplify security rules.  The primary approach uses path-based ownership for all user-specific data, placing it directly under a `/users/{userId}` root. This inherently links data ownership to the authenticated user's ID (`request.auth.uid`), making rules straightforward.\n\n**Authorization Independence (CRITICAL):**\nFor all user-owned subcollections, the `userId` from the path is explicitly denormalized into a field within the document (e.g., `UserProfile.externalUserId` (matching `userId`), `JobMatchScore.userId`, `JobApplication.userId`, `ApplicationEvent.userId`). Additionally, for nested subcollections like `ApplicationEvent`, the parent `applicationId` is also denormalized into the `ApplicationEvent` document. This eliminates the need for `get()` calls in security rules to check parent document attributes for authorization, enabling atomic operations and greatly simplifying rule logic. For instance, an `ApplicationEvent` document can be authorized solely by checking `request.auth.uid == resource.data.userId` without needing to fetch its parent `JobApplication` document.\n\n**QAPs (Rules are not Filters):**\n1.  **Global Data:** The `/job_postings` collection is designed for public, read-only access by all authenticated users. This collection has a homogeneous security posture (public read, potentially admin write), which directly supports efficient `list` operations without requiring complex server-side filtering. Clients can fetch all job postings and apply UI filters.\n2.  **User-Specific Data:** All user-private collections (e.g., `/users/{userId}/profile`, `/users/{userId}/job_match_scores`, `/users/{userId}/job_applications`, and their subcollections) naturally satisfy the QAP. Any `list` query on these collections will inherently be scoped to the authenticated user's path (`request.auth.uid`). Security rules can simply verify `request.auth.uid == userId` (where `userId` is the path wildcard) to grant read access, ensuring that `list` operations only return data the user is authorized to see, without additional filtering logic within the rules themselves.\n\nThis design ensures that security rules are explicit, atomic, and easy to understand, debug, and maintain, directly addressing the user's implicit need for secure account creation and data access."
+  }
+}

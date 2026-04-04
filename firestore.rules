@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * AZZURA JOB MATCHING - SECURITY RULES DOCUMENTATION
+     * 
+     * Core Philosophy: 
+     * This ruleset enforces a strict user-ownership model based on Firebase Authentication UIDs. 
+     * Most data is nested under a path containing the user's ID, ensuring that users can only 
+     * access their own resumes, match scores, and job applications.
+     * 
+     * Data Structure:
+     * - /users/{userId}/... : Contains all private user data (Profile, Match Scores, Applications).
+     * - /job_postings/ : A top-level collection containing job data accessible to all signed-in users.
+     * 
+     * Key Security Decisions:
+     * - Authorization Independence: Critical fields (like 'userId' or 'externalUserId') are 
+     *   denormalized onto every document. Rules verify these fields against the URL path and 
+     *   the authenticated user's UID to avoid expensive 'get()' lookups.
+     * - Ownership Immutability: Once a document is created and linked to a user, the ownership 
+     *   field (e.g., userId) cannot be changed in an update.
+     * - Prototyping Flexibility: These rules prioritize correct authorization (who can see what) 
+     *   over strict schema validation (data types/required fields), allowing for rapid 
+     *   development iterations.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** Checks if the request is from a signed-in user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** 
+     * Combined check for ownership and existence. 
+     * Essential for secure update and delete operations. 
+     */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for the UserProfile collection. Stores private resume and preference data.
+     * @path /users/{userId}/profile/{profileId}
+     * @allow (create) User 'abc' creates a profile at /users/abc/profile/main with externalUserId 'abc'.
+     * @deny (list) User 'abc' attempts to list profiles in /users/xyz/profile/.
+     * @principle Path-based ownership and relational integrity validation for externalUserId.
+     */
+    match /users/{userId}/profile/{profileId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.externalUserId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.externalUserId == resource.data.externalUserId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for JobPostings. These are public listings for all authenticated users.
+     * @path /job_postings/{jobPostingId}
+     * @allow (get) Any signed-in user reads a specific job posting.
+     * @deny (create) Any user attempts to create or modify a job posting via the client.
+     * @principle Read-only access for users; writes are restricted to administrative processes.
+     */
+    match /job_postings/{jobPostingId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false; // TODO: Add administrative role check if needed.
+    }
+
+    /**
+     * @description Rules for JobMatchScores. AI-calculated scores linking users to jobs.
+     * @path /users/{userId}/job_match_scores/{scoreId}
+     * @allow (list) User 'abc' queries their own match scores.
+     * @deny (update) User 'abc' tries to change the 'userId' field on an existing score.
+     * @principle Strict user-path ownership with immutable identity fields.
+     */
+    match /users/{userId}/job_match_scores/{scoreId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for JobApplications. Tracks a user's progress for specific jobs.
+     * @path /users/{userId}/job_applications/{applicationId}
+     * @allow (create) User 'abc' applies for a job and saves the entry under their own path.
+     * @deny (get) User 'abc' tries to read an application belonging to user 'xyz'.
+     * @principle Relational integrity enforced by matching path userId to internal data.
+     */
+    match /users/{userId}/job_applications/{applicationId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for ApplicationEvents. Detailed timeline for a specific application.
+     * @path /users/{userId}/job_applications/{applicationId}/application_events/{eventId}
+     * @allow (create) User 'abc' adds an interview event to their application.
+     * @deny (create) User 'abc' adds an event but sets the 'applicationId' to a different job.
+     * @principle Multi-level relational integrity ensuring events match both user and application.
+     */
+    match /users/{userId}/job_applications/{applicationId}/application_events/{eventId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) 
+                    && request.resource.data.userId == userId 
+                    && request.resource.data.applicationId == applicationId;
+      allow update: if isExistingOwner(userId) 
+                    && request.resource.data.userId == resource.data.userId 
+                    && request.resource.data.applicationId == resource.data.applicationId;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

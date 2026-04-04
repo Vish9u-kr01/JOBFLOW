@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useApp } from '@/lib/store/app-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Briefcase, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginContent() {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail, profile } = useApp();
   const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
@@ -156,5 +156,17 @@ useEffect(() => {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 flex items-center justify-center min-h-[80vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-white" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
